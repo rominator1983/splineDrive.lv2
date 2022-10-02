@@ -21,16 +21,50 @@ extern "C" typedef struct
 {
    // Port buffers
    const float *gain;
+   float oldGain;
    const float *input;
    float *output;
 
-//   float maxValue;
+   float maxValue;
 
+   tk::spline spline;
    uint32_t inputBufferStart;
    uint32_t inputBufferEnd;
    uint32_t inputBufferMaxSize;
    uint32_t inputBufferLastEdgeFlip;
 } Distortion;
+
+#define min(a,b) ((a) < (b) ? (a) : (b))
+
+void setCurve(Distortion *distortion, float gain)
+{
+   distortion->oldGain = gain;
+   // TODO: read from conf file
+   
+   // NOTE: noisy when plaid loud
+   // std::vector<double> x = {0.0, 0.1, 0.2, 0.5, 1.0};
+   // std::vector<double> y = {0.0, 0.8, -0.8, 0.7, 1.0};
+
+   // NOTE: decent drive
+   std::vector<double> x = {0.0, 0.2, 1.0};
+   std::vector<double> y = {0.0, min(0.2 * gain, 1.0), 1.0};
+
+   // NOTE: kind of octave still noisy
+   // std::vector<double> x = {0.0, 0.1, 0.2, 1.0};
+   // std::vector<double> y = {0.0, -0.9, 0.8, 1.0};
+
+   distortion->spline.set_points(x, y, tk::spline::cspline);
+
+   FILE *pFile;
+   pFile = fopen("dist.log", "a+");
+   fprintf(pFile, "gain %.2f\n", gain);
+   for (float i = 0.0; i <= 1.01; i+=0.05)
+   {
+      fprintf(pFile, "value %.2f: %.3f\n", i, distortion->spline(i));
+   }
+
+   fclose(pFile);
+}
 
 extern "C" LV2_Handle instantiate(const LV2_Descriptor *descriptor,
             double rate,
@@ -39,10 +73,9 @@ extern "C" LV2_Handle instantiate(const LV2_Descriptor *descriptor,
 {
    Distortion *distortion = (Distortion *)calloc(1, sizeof(Distortion));
 
-   // pFile = fopen("dist.log", "w+");
-   // fprintf(pFile, "instantiated\n");
-   // fclose(pFile);
+   distortion->spline = tk::spline();
 
+   setCurve(distortion, 1.0);
 
    return (LV2_Handle)distortion;
 }
@@ -55,6 +88,10 @@ extern "C" void connect_port(LV2_Handle instance, uint32_t port, void *data)
    {
    case GAIN:
       distortion->gain = (const float *)data;
+      
+      // if (distortion->gain != NULL)
+      //    setCurve(distortion, *(distortion->gain));
+      
       break;
    case INPUT:
       distortion->input = (const float *)data;
@@ -70,22 +107,15 @@ extern "C" void activate(LV2_Handle instance)
   Distortion *distortion = (Distortion *)instance;
 }
 
-extern "C" float distFunc(float sample, float gain)
-{   
-   float output = sample * gain;
-
-   if (output > (1.0-1/gain))
-      output = (1.0-1/gain) + sample * (1/gain);
-
-   return output;
-}
-
 extern "C" void run(LV2_Handle instance, uint32_t n_samples)
 {
    Distortion *distortion = (Distortion *)instance;
 
    const float *const input = distortion->input;
    float *const output = distortion->output;
+
+   if (distortion->oldGain != *(distortion->gain))
+      setCurve(distortion, *(distortion->gain));
 
    // NOTE: read samples from the internal plugin buffer to the output
    float sample;
@@ -96,17 +126,27 @@ extern "C" void run(LV2_Handle instance, uint32_t n_samples)
       polarity = sample > 0.0 ? 1.0 : -1.0;
       sample = sample * polarity;
 
-      // if (sample > distortion->maxValue)
-      // {
-      //    distortion->maxValue = sample;
+      if (sample > distortion->maxValue)
+      {
+         distortion->maxValue = sample;
          
-      //    FILE *pFile;
-      //    pFile = fopen("dist.log", "a+");
-      //    fprintf(pFile, "max value: %.3f\n", sample);
-      //    fclose(pFile);
-      // }
+         // FILE *pFile;
+         // pFile = fopen("dist.log", "a+");
+         // fprintf(pFile, "max value: %.3f\n", sample);
+         // fclose(pFile);
+      }
 
-      output[pos] = distFunc(sample, *(distortion->gain)) * polarity;
+      //output[pos] = distFunc(sample, *(distortion->gain)) * polarity;
+      // TODO: add input gain to spline (not input?!?)
+      float value = distortion->spline(sample);
+
+      if (value > 1.0)
+         value = 1.0;
+
+      if (value < -1.0)
+         value = -1.0;
+
+      output[pos] = value * polarity;
    }
 }
 

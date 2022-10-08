@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-// NOTE: from https://github.com/ttk592/spline/
+// NOTE: Special thanks to for this spline library https://github.com/ttk592/spline/
 #include "spline.h"
 
 #define URI "http://lv2plug.in/plugins/splineDrive"
@@ -25,13 +25,7 @@ extern "C" typedef struct
    const float *input;
    float *output;
 
-   float maxValue;
-
    tk::spline spline;
-   uint32_t inputBufferStart;
-   uint32_t inputBufferEnd;
-   uint32_t inputBufferMaxSize;
-   uint32_t inputBufferLastEdgeFlip;
 } Distortion;
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
@@ -39,17 +33,16 @@ extern "C" typedef struct
 void setCurve(Distortion *distortion, float gain)
 {
    distortion->oldGain = gain;
-   // TODO: read from conf file
    
-   // NOTE: noisy when plaid loud
-   // std::vector<double> x = {0.0, 0.1, 0.2, 0.5, 1.0};
-   // std::vector<double> y = {0.0, 0.8, -0.8, 0.7, 1.0};
-
    // NOTE: decent drive
    std::vector<double> x = {0.0, 0.2, 1.0};
    std::vector<double> y = {0.0, min(0.2 * gain, 1.0), 1.0};
 
-   // NOTE: kind of octave still noisy
+   // NOTE: Crazy curve, noisy when plaid loud
+   // std::vector<double> x = {0.0, 0.1, 0.2, 0.5, 1.0};
+   // std::vector<double> y = {0.0, 0.8, -0.8, 0.7, 1.0};
+
+   // NOTE: Kind of octavey still noisy
    // std::vector<double> x = {0.0, 0.1, 0.2, 1.0};
    // std::vector<double> y = {0.0, -0.9, 0.8, 1.0};
 
@@ -87,11 +80,7 @@ extern "C" void connect_port(LV2_Handle instance, uint32_t port, void *data)
    switch ((PortIndex)port)
    {
    case GAIN:
-      distortion->gain = (const float *)data;
-      
-      // if (distortion->gain != NULL)
-      //    setCurve(distortion, *(distortion->gain));
-      
+      distortion->gain = (const float *)data;      
       break;
    case INPUT:
       distortion->input = (const float *)data;
@@ -117,7 +106,6 @@ extern "C" void run(LV2_Handle instance, uint32_t n_samples)
    if (distortion->oldGain != *(distortion->gain))
       setCurve(distortion, *(distortion->gain));
 
-   // NOTE: read samples from the internal plugin buffer to the output
    float sample;
    float polarity;
    for (uint32_t pos = 0; pos < n_samples; pos++)
@@ -126,18 +114,6 @@ extern "C" void run(LV2_Handle instance, uint32_t n_samples)
       polarity = sample > 0.0 ? 1.0 : -1.0;
       sample = sample * polarity;
 
-      if (sample > distortion->maxValue)
-      {
-         distortion->maxValue = sample;
-         
-         // FILE *pFile;
-         // pFile = fopen("dist.log", "a+");
-         // fprintf(pFile, "max value: %.3f\n", sample);
-         // fclose(pFile);
-      }
-
-      //output[pos] = distFunc(sample, *(distortion->gain)) * polarity;
-      // TODO: add input gain to spline (not input?!?)
       float value = distortion->spline(sample);
 
       if (value > 1.0)
@@ -165,16 +141,15 @@ extern "C" const void * extension_data(const char *uri)
 }
 
 extern "C" const LV2_Descriptor descriptor = {URI,
-                                          instantiate,
-                                          connect_port,
-                                          activate,
-                                          run,
-                                          deactivate,
-                                          cleanup,
-                                          extension_data};
+   instantiate,
+   connect_port,
+   activate,
+   run,
+   deactivate,
+   cleanup,
+   extension_data};
 
-extern "C" LV2_SYMBOL_EXPORT const LV2_Descriptor *
-lv2_descriptor(uint32_t index)
+extern "C" LV2_SYMBOL_EXPORT const LV2_Descriptor *lv2_descriptor(uint32_t index)
 {
    return index == 0 ? &descriptor : NULL;
 }

@@ -19,18 +19,28 @@
 		lv2:symbol "gain" ;
 		lv2:name "Gain" ;
 		lv2:default 1.0 ;
-		lv2:minimum 1.0 ;
-		lv2:maximum 40.0 ;
+		lv2:minimum 0.01 ;
+		lv2:maximum 10.0 ;
+	] , [
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 1 ;
+		lv2:symbol "preserveDynamics" ;
+		lv2:name "Preserve dynamics" ;
+		lv2:default 0 ;
+		lv2:minimum 0 ;
+		lv2:maximum 1 ;
+		lv2:portProperty lv2:integer, lv2:toggled;
 	] , [
 		a lv2:AudioPort ,
 			lv2:InputPort ;
-		lv2:index 1 ;
+		lv2:index 2 ;
 		lv2:symbol "in" ;
 		lv2:name "In"
 	] , [
 		a lv2:AudioPort ,
 			lv2:OutputPort ;
-		lv2:index 2 ;
+		lv2:index 3 ;
 		lv2:symbol "out" ;
 		lv2:name "Out"
 	] .

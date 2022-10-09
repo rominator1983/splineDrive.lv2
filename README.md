@@ -35,6 +35,8 @@ Also it would be interesting to see if clipping occurs. There might be some outp
 
 I also might try to add some further crazy things where you can control more anchor points via JSON files or something for the complete range of -1 to 1. This would allow for built in noise reduction (with anchor points at 0.0 output for some input level) and even octave sounds (at least some added harmonics) when going back to a negative output level for certain input levels when adjusted to your input level just right. But this is a quite some work and I also do want to play my guitar in my spare time. You could achieve the same by compiling this plugin yourself and editing the hard coded anchor points. The effort is managable.
 
+To increase dynamics the clipping for high gains could be overcome by making the spline monotonic with just one method call. This might have to be controlled by the user by an added "preserve dynamics" switch since there are some limitations for creating monotonic splines listed in https://github.com/ttk592/spline/
+
 Install
 ===
 Install the pre compiled artifacts from https://github.com/rominator1983/splineDrive.lv2/releases

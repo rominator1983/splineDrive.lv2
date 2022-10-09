@@ -21,7 +21,7 @@ Of course tubes have a lot of temporal effects and this plugin will not sound li
 
 At the moment the input gain controls the output level and thus the amplification of a spline anchor point at an input level of 0.1 (where the range for one polarity is from 0 to 1.0). The gain control in other plugins controls an input amplification that would easily add unwanted distortion to the drive stage. This can be avoided using this approach. Using this achieved the best (at least for me) sounding results.
 
-Be adviced that a very high gain will result in some clipping as the spline curve will cross the 1.0 output level and thus the output has to be clipped. You can use the "preserve dynamics" switch to avoid that behavior which uses monotonic spline curves. There are some limitations for creating monotonic splines listed in https://github.com/ttk592/spline/ which I do not really know if they make a difference for this use case at all.
+Be adviced that a very high gain will result in some clipping as the spline curve will cross the 1.0 output level and thus the output has to be clipped. You can use the "preserve dynamics" switch to avoid that behavior which uses monotonic spline curves. There are some limitations for creating monotonic splines listed in https://github.com/ttk592/spline/ which I do not really know if they make a difference for this use case at all. This only gets you so far for gains up to 7ish and I cannot tell if this is audible at all.
 
 And this has not been done before?
 ===

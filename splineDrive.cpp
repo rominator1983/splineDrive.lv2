@@ -33,7 +33,7 @@ extern "C" typedef struct
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
-void setCurve(Distortion *distortion, float gain, bool preserveDynamics)
+void setCurve(Distortion *distortion, float gain, int preserveDynamics)
 {
    distortion->oldGain = gain;
    distortion->oldPreserveDynamics = preserveDynamics;
@@ -52,12 +52,13 @@ void setCurve(Distortion *distortion, float gain, bool preserveDynamics)
 
    distortion->spline.set_points(x, y, tk::spline::cspline);
    
-   if (preserveDynamics)
+   if (preserveDynamics > 0)
       distortion->spline.make_monotonic();
 
    FILE *pFile;
    pFile = fopen("splineDrive.log", "a+");
    fprintf(pFile, "gain %.2f\n", gain);
+   fprintf(pFile, "preserveDynamis: %s\n", preserveDynamics > 0 ? "true" : "false");
    for (float i = 0.0; i <= 1.01; i+=0.05)
    {
       fprintf(pFile, "value %.2f => %.3f\n", i, distortion->spline(i));
@@ -115,7 +116,7 @@ extern "C" void run(LV2_Handle instance, uint32_t n_samples)
 
    if ((distortion->oldGain != *(distortion->gain)) ||
       (distortion->oldPreserveDynamics != *(distortion->preserveDynamics)))
-      setCurve(distortion, *(distortion->gain), *(distortion->preserveDynamics) > 0);
+      setCurve(distortion, *(distortion->gain), *(distortion->preserveDynamics));
 
    float sample;
    float polarity;

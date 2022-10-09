@@ -11,15 +11,17 @@ Likewise as the spline library is not only linked but even compiled into this pl
 
 Why another drive plugin
 ===
-The intention for this was to create a drive with a LOT of dynamics even for higher gains. Using a spline for the input to output mapping makes sure that every individual input value is mapped to an individual output value without clipping or massive distortion at least up to some degree of gain.
+The intention for this was to create a drive with a LOT of dynamics even for higher gains. Using a spline for the input to output mapping makes sure that every individual input value is mapped to an individual output value without clipping or massive distortion at least up to some degree of gain (unless you use "preserve dynamics").
 
-Having no temporal effects mea0ns that this drive treats all input frequencies equally (of course strictly ignoring psychoacoustics). This distinguishes this plugin from existing drives that are modeled after existing floor pedals via the faust libraray or some other approach.
+Having no temporal effects means that this drive treats all input frequencies equally (of course strictly ignoring psychoacoustics). This distinguishes this plugin from existing drives that are modeled after existing floor pedals via the faust libraray or some other approach.
 
 The pedal should sound like what floor pedal builders always had in mind when using different diodes that would only get them so far in reproducing tube sounds.
 
 Of course tubes have a lot of temporal effects and this plugin will not sound like any of that.
 
-At the moment the input gain controls the output level and thus the amplification of a spline anchor point at an input level of 0.2 (where the range for one polarity is from 0 to 1.0). The gain control in other plugins controls an input amplification that would easily add unwanted distortion to the drive stage. This can be avoided using this approach. Using this achieved the best (at least for me) sounding results. Be adviced that a very high gain will result in some clipping as the spline curve will cross the 1.0 output level.
+At the moment the input gain controls the output level and thus the amplification of a spline anchor point at an input level of 0.1 (where the range for one polarity is from 0 to 1.0). The gain control in other plugins controls an input amplification that would easily add unwanted distortion to the drive stage. This can be avoided using this approach. Using this achieved the best (at least for me) sounding results.
+
+Be adviced that a very high gain will result in some clipping as the spline curve will cross the 1.0 output level and thus the output has to be clipped. You can use the "preserve dynamics" switch to avoid that behavior which uses monotonic spline curves. There are some limitations for creating monotonic splines listed in https://github.com/ttk592/spline/ which I do not really know if they make a difference for this use case at all.
 
 And this has not been done before?
 ===
@@ -34,8 +36,6 @@ I might add a control for varying the hard coded input value for the spline anch
 Also it would be interesting to see if clipping occurs. There might be some output LV2 port to show this.
 
 I also might try to add some further crazy things where you can control more anchor points via JSON files or something for the complete range of -1 to 1. This would allow for built in noise reduction (with anchor points at 0.0 output for some input level) and even octave sounds (at least some added harmonics) when going back to a negative output level for certain input levels when adjusted to your input level just right. But this is a quite some work and I also do want to play my guitar in my spare time. You could achieve the same by compiling this plugin yourself and editing the hard coded anchor points. The effort is managable.
-
-To increase dynamics the clipping for high gains could be overcome by making the spline monotonic with just one method call. This might have to be controlled by the user by an added "preserve dynamics" switch since there are some limitations for creating monotonic splines listed in https://github.com/ttk592/spline/
 
 Install
 ===

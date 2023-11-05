@@ -39,8 +39,10 @@ void setCurve(Distortion *distortion, float gain, int preserveDynamics)
    distortion->oldPreserveDynamics = preserveDynamics;
    
    // NOTE: decent drive
-   std::vector<double> x = {0.0, 0.1, 1.0};
-   std::vector<double> y = {0.0, min(0.1 * gain, 1.0), 1.0};
+   //std::vector<double> x = {0.0, 0.1, 1.0};
+   std::vector<double> x = {-1.0, -0.1, 0.0, 0.1, 1.0};
+   //std::vector<double> y = {0.0, min(0.1 * gain, 1.0), 1.0};
+   std::vector<double> y = {-1.0, 0.0 - min(0.1 * gain, 1.0), 0.0, min(0.1 * gain, 1.0), 1.0};
 
    // NOTE: Crazy curve, noisy when plaid loud
    // std::vector<double> x = {0.0, 0.1, 0.2, 0.5, 1.0};
@@ -59,9 +61,9 @@ void setCurve(Distortion *distortion, float gain, int preserveDynamics)
    pFile = fopen("splineDrive.log", "a+");
    fprintf(pFile, "gain %.2f\n", gain);
    fprintf(pFile, "preserveDynamis: %s\n", preserveDynamics > 0 ? "true" : "false");
-   for (float i = 0.0; i <= 1.01; i+=0.05)
+   for (float i = -1.0; i <= 1.01; i+=0.05)
    {
-      fprintf(pFile, "value %.2f => %.3f\n", i, distortion->spline(i));
+      fprintf(pFile, "value %.2f => %.3f\n", i, distortion->spline.singleValue(i));
    }
 
    fclose(pFile);
@@ -118,24 +120,7 @@ extern "C" void run(LV2_Handle instance, uint32_t n_samples)
       (distortion->oldPreserveDynamics != *(distortion->preserveDynamics)))
       setCurve(distortion, *(distortion->gain), *(distortion->preserveDynamics));
 
-   float sample;
-   float polarity;
-   for (uint32_t pos = 0; pos < n_samples; pos++)
-   {
-      sample = input[pos];
-      polarity = sample > 0.0 ? 1.0 : -1.0;
-      sample = sample * polarity;
-
-      float value = distortion->spline(sample);
-
-      if (value > 1.0)
-         value = 1.0;
-
-      if (value < -1.0)
-         value = -1.0;
-
-      output[pos] = value * polarity;
-   }
+   distortion->spline(input, output, n_samples);
 }
 
 extern "C" void deactivate(LV2_Handle instance)

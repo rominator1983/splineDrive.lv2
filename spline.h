@@ -83,7 +83,6 @@ protected:
     bool m_made_monotonic;
     void set_coeffs_from_b();               // calculate c_i, d_i from b_i
     size_t find_closest(double x) const;    // closest idx so that m_x[idx]<=x
-
 public:
     // default constructor: set boundary condition to be zero curvature
     // at both ends, i.e. natural splines
@@ -130,7 +129,8 @@ public:
     bool make_monotonic();
 
     // evaluates the spline at point x
-    double operator() (double x) const;
+    void operator() (const float* input, float* output, int n_samples) const;
+    float singleValue(float inputSample) const;
     double deriv(int order, double x) const;
 
     // solves for all x so that: spline(x) = y
@@ -473,7 +473,32 @@ size_t spline::find_closest(double x) const
     return idx;
 }
 
-double spline::operator() (double x) const
+// double spline::operator() (double x) const
+// {
+//     // polynomial evaluation using Horner's scheme
+//     // TODO: consider more numerically accurate algorithms, e.g.:
+//     //   - Clenshaw
+//     //   - Even-Odd method by A.C.R. Newbery
+//     //   - Compensated Horner Scheme
+//     size_t n=m_x.size();
+//     size_t idx=find_closest(x);
+
+//     double h=x-m_x[idx];
+//     double interpol;
+//     if(x<m_x[0]) {
+//         // extrapolation to the left
+//         interpol=(m_c0*h + m_b[0])*h + m_y[0];
+//     } else if(x>m_x[n-1]) {
+//         // extrapolation to the right
+//         interpol=(m_c[n-1]*h + m_b[n-1])*h + m_y[n-1];
+//     } else {
+//         // interpolation
+//         interpol=((m_d[idx]*h + m_c[idx])*h + m_b[idx])*h + m_y[idx];
+//     }
+//     return interpol;
+// }
+
+void spline::operator() (const float* input, float* output, int n_samples) const
 {
     // polynomial evaluation using Horner's scheme
     // TODO: consider more numerically accurate algorithms, e.g.:
@@ -481,21 +506,40 @@ double spline::operator() (double x) const
     //   - Even-Odd method by A.C.R. Newbery
     //   - Compensated Horner Scheme
     size_t n=m_x.size();
-    size_t idx=find_closest(x);
+    size_t idx;
+    float inputSample;
 
-    double h=x-m_x[idx];
-    double interpol;
-    if(x<m_x[0]) {
-        // extrapolation to the left
-        interpol=(m_c0*h + m_b[0])*h + m_y[0];
-    } else if(x>m_x[n-1]) {
-        // extrapolation to the right
-        interpol=(m_c[n-1]*h + m_b[n-1])*h + m_y[n-1];
-    } else {
-        // interpolation
-        interpol=((m_d[idx]*h + m_c[idx])*h + m_b[idx])*h + m_y[idx];
-    }
-    return interpol;
+   for (uint32_t pos = 0; pos < n_samples; pos++)
+   {
+    inputSample = input[pos];
+
+    output[pos] = (inputSample > -1.0) ? 
+        ((inputSample < 1.0) ? 
+            singleValue(inputSample ) :
+           1.0) :
+        -1.0;
+
+    // if(inputSample<m_x[0]) {
+    //     // extrapolation to the left
+    //     interpol=(m_c0*h + m_b[0])*h + m_y[0];
+    // } else if(x>m_x[n-1]) {
+    //     // extrapolation to the right
+    //     interpol=(m_c[n-1]*h + m_b[n-1])*h + m_y[n-1];
+    // } else {
+    //     // interpolation
+    //     interpol=;
+    // }
+    // return interpol;
+   }
+}
+
+float spline::singleValue(float inputSample) const
+{
+    // TODO: get rid of stack variable somehow => local function?
+    size_t idx=find_closest(inputSample);
+
+    double h=inputSample-m_x[idx];
+    return ((m_d[idx]*h + m_c[idx])*h + m_b[idx])*h + m_y[idx];
 }
 
 double spline::deriv(int order, double x) const

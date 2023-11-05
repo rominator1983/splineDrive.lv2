@@ -61,10 +61,13 @@ void setCurve(Distortion *distortion, float gain, int preserveDynamics)
    pFile = fopen("splineDrive.log", "a+");
    fprintf(pFile, "gain %.2f\n", gain);
    fprintf(pFile, "preserveDynamis: %s\n", preserveDynamics > 0 ? "true" : "false");
-   for (float i = -1.0; i <= 1.01; i+=0.05)
-   {
-      fprintf(pFile, "value %.2f => %.3f\n", i, distortion->spline.singleValue(i));
-   }
+
+
+   // for (float i = -1.0; i <= 1.01; i+=0.05)
+   // {
+      // TODO: call with array
+      //fprintf(pFile, "value %.2f => %.3f\n", i, distortion->spline.singleValue(i));
+   // }
 
    fclose(pFile);
 }

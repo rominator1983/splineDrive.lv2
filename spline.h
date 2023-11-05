@@ -130,7 +130,6 @@ public:
 
     // evaluates the spline at point x
     void operator() (const float* input, float* output, int n_samples) const;
-    float singleValue(float inputSample) const;
     double deriv(int order, double x) const;
 
     // solves for all x so that: spline(x) = y
@@ -500,24 +499,32 @@ size_t spline::find_closest(double x) const
 
 void spline::operator() (const float* input, float* output, int n_samples) const
 {
+    size_t idx;
+    float inputSample;
+    double h;
+
     // polynomial evaluation using Horner's scheme
     // TODO: consider more numerically accurate algorithms, e.g.:
     //   - Clenshaw
     //   - Even-Odd method by A.C.R. Newbery
     //   - Compensated Horner Scheme
-    size_t n=m_x.size();
-    size_t idx;
-    float inputSample;
 
    for (uint32_t pos = 0; pos < n_samples; pos++)
    {
     inputSample = input[pos];
 
-    output[pos] = (inputSample > -1.0) ? 
-        ((inputSample < 1.0) ? 
-            singleValue(inputSample ) :
-           1.0) :
-        -1.0;
+    if (inputSample > 1.0)
+        output[pos] = 1.0;
+    else if (inputSample < -1.0)
+        output[pos] = -1.0;
+    else
+    {
+        // TODO: check type conversions
+        idx=find_closest(inputSample);
+
+        h=inputSample-m_x[idx];
+        output[pos] = ((m_d[idx]*h + m_c[idx])*h + m_b[idx])*h + m_y[idx];
+    }
 
     // if(inputSample<m_x[0]) {
     //     // extrapolation to the left
@@ -531,15 +538,6 @@ void spline::operator() (const float* input, float* output, int n_samples) const
     // }
     // return interpol;
    }
-}
-
-float spline::singleValue(float inputSample) const
-{
-    // TODO: get rid of stack variable somehow => local function?
-    size_t idx=find_closest(inputSample);
-
-    double h=inputSample-m_x[idx];
-    return ((m_d[idx]*h + m_c[idx])*h + m_b[idx])*h + m_y[idx];
 }
 
 double spline::deriv(int order, double x) const

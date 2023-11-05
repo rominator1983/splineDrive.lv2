@@ -468,8 +468,7 @@ size_t spline::find_closest(float x) const
 {
     std::vector<float>::const_iterator it;
     it=std::upper_bound(m_x.begin(),m_x.end(),x);       // *it > x
-    size_t idx = std::max( int(it-m_x.begin())-1, 0);   // m_x[idx] <= x
-    return idx;
+    return std::max( int(it-m_x.begin())-1, 0);   // m_x[idx] <= x
 }
 
 // float spline::operator() (float x) const
@@ -515,14 +514,11 @@ void spline::operator() (const float* input, float* output, int n_samples) const
     inputSample = input[pos];
 
     if (inputSample > 1.0)
-    {
         output[pos] = (m_c[n-1]*h + m_b[n-1])*h + m_y[n-1];
-    }
     else if (inputSample < -1.0)
         output[pos] = (m_c0*h + m_b[0])*h + m_y[0];
     else
     {
-        // TODO: check type conversions
         idx=find_closest(inputSample);
 
         h=inputSample-m_x[idx];

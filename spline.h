@@ -513,9 +513,12 @@ void spline::operator() (const float* input, float* output, int n_samples) const
    {
     inputSample = input[pos];
 
+    // NOTE: optimizations take into account that range is only from -1 to 1
     if (inputSample > 1.0)
+        // extrapolation to the right
         output[pos] = (m_c[n-1]*h + m_b[n-1])*h + m_y[n-1];
     else if (inputSample < -1.0)
+        // extrapolation to the left
         output[pos] = (m_c0*h + m_b[0])*h + m_y[0];
     else
     {
@@ -524,19 +527,7 @@ void spline::operator() (const float* input, float* output, int n_samples) const
         h=inputSample-m_x[idx];
         output[pos] = ((m_d[idx]*h + m_c[idx])*h + m_b[idx])*h + m_y[idx];
     }
-
-    // if(inputSample<m_x[0]) {
-    //     // extrapolation to the left
-    //     interpol=;
-    // } else if(x>m_x[n-1]) {
-    //     // extrapolation to the right
-    //     interpol=;
-    // } else {
-    //     // interpolation
-    //     interpol=;
-    // }
-    // return interpol;
-   }
+  }
 }
 
 float spline::deriv(int order, float x) const

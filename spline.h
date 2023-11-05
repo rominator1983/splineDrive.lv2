@@ -502,6 +502,7 @@ void spline::operator() (const float* input, float* output, int n_samples) const
     size_t idx;
     float inputSample;
     float h;
+    const int n=(int)m_x.size();
 
     // polynomial evaluation using Horner's scheme
     // TODO: consider more numerically accurate algorithms, e.g.:
@@ -514,9 +515,11 @@ void spline::operator() (const float* input, float* output, int n_samples) const
     inputSample = input[pos];
 
     if (inputSample > 1.0)
-        output[pos] = 1.0;
+    {
+        output[pos] = (m_c[n-1]*h + m_b[n-1])*h + m_y[n-1];
+    }
     else if (inputSample < -1.0)
-        output[pos] = -1.0;
+        output[pos] = (m_c0*h + m_b[0])*h + m_y[0];
     else
     {
         // TODO: check type conversions
@@ -528,10 +531,10 @@ void spline::operator() (const float* input, float* output, int n_samples) const
 
     // if(inputSample<m_x[0]) {
     //     // extrapolation to the left
-    //     interpol=(m_c0*h + m_b[0])*h + m_y[0];
+    //     interpol=;
     // } else if(x>m_x[n-1]) {
     //     // extrapolation to the right
-    //     interpol=(m_c[n-1]*h + m_b[n-1])*h + m_y[n-1];
+    //     interpol=;
     // } else {
     //     // interpolation
     //     interpol=;
